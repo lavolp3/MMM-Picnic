@@ -9,7 +9,7 @@ This is a module for the [MagicMirror²](https://github.com/MichMich/MagicMirror
 
 ## Screenshot
 
-![](picnic_example.png)
+![example](./picnic_example.png?raw=true)
 
 ## Installation
 
@@ -26,7 +26,7 @@ Add this configuration into `config.js` file's
 ```javascript
 {
     module: "MMM-Picnic",
-    position: "bottom_bar",
+    position: "top_left",
     config: {
        email: "USER@EXAMPLE.COM",
        password: "SECRET",
