@@ -1,8 +1,8 @@
 Module.register("MMM-Picnic", {
 
     defaults: {
-        email: "dirk.kovert@gmail.com",
-        password: "pcNC2483",
+        email: "",
+        password: "",
         updateInterval: 5,
         maxSlots: 8,
         maxDeliveries: 5,
