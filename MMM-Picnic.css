@@ -44,7 +44,6 @@
 }
 
 .MMM-Picnic .slotDiv.unavailable {
-    color: #aaa;
     border: 1px solid #555;
     text-decoration: line-through;
 }
