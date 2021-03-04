@@ -1,0 +1,65 @@
+<div class="picnic-container">
+<header>Picnic</header>
+	
+{% if loading %}
+
+	{{'LOADING' | translate}}
+
+{% else %}
+
+    <div class="cartDiv">
+        <i class="fas fa-shopping-cart"></i>
+        <span>{{ shoppingCart.total_count }} {{'ARTICLES' | translate }} | {{ shoppingCart.total_price }} </span>
+    </div>
+
+	{% if deliverySlots %}
+		<div class="delSlots {{ config.size }}">
+            <div class="picnicHeader">{{'DELIVERY_SLOTS' | translate }}</div>
+			<div class="slotTable picnicContent {{ config.size }}">
+            	<!-- <tbody style="width: 100%"> -->
+                    {% for i in range(0, deliverySlots.length) %}
+						<div class="slotDiv {{ deliverySlots[i].slotClass }} {{ config.size }}">
+                            {{ deliverySlots[i].date}}<br>
+                            {{ deliverySlots[i].timeRange }}
+                        </div>
+                    {% endfor %}
+                <!-- </tbody>-->
+			</div>
+		</div>
+	{% endif %}
+    
+    {% if currentDelivery %}
+        <div class="currentDel {{ config.size }}">
+            <div class="picnicHeader">{{'CURRENT_DELIVERIES' | translate }}</div>
+            <div class="picnicContent">
+                <i class="fas fa-shopping-cart"></i>{{ currentDelivery.totalItems }} {{'ARTICLES' | translate }} | {{ currentDelivery.totalPrice }}
+                <br>
+                ETA: {{ currentDelivery.date }} {{currentDelivery.eta }} 
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if recentDeliveries %}
+        <div class="recentDel {{ config.size }}">
+            <div class="picnicHeader">{{'RECENT_DELIVERIES' | translate }}</div>
+            <div class="picnicContent">
+                <table>
+                <tr>
+                    <th><i class="far fa-calendar-alt"> </th>
+                    <th><i class="fas fa-coins"> </th>
+                    <th><i class="fas fa-wine-bottle"> </th>
+                </tr>
+                {% for i in range(0, recentDeliveries.length) %}
+				    <tr>
+                        <td>{{ recentDeliveries[i].date }}</td>
+                        <td>{{ recentDeliveries[i].totalPrice }}</td>
+                        <td>{{ recentDeliveries[i].returned }}</td>
+                    </tr>
+                {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% endif %}
+    
+{% endif %}
+</div>

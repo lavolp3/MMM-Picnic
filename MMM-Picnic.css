@@ -1,0 +1,68 @@
+.MMM-Picnic {
+    text-align: left;
+    line-height: 1.4em;
+}
+
+.MMM-Picnic div {
+    margin: 15px 0px;
+}
+
+.MMM-Picnic .cartDiv i::before {
+    margin: 20px;
+    color: red;
+}
+
+.MMM-Picnic table td {
+    padding: 6px 3px;
+}
+
+.MMM-Picnic table tr {
+    margin-left: 50px;
+}
+
+.MMM-Picnic .slotTable {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;  
+    justify-content: left;
+    align-content: flex-start;
+}
+
+.MMM-Picnic .slotDiv {
+    width: 120px;
+    border: 1px solid #999;
+    border-radius: 8px;
+    margin: 10px;
+    padding: 10px;
+    text-align: center;
+}
+
+.MMM-Picnic .slotDiv.xsmall {
+    width: 90px;
+    margin: 7px;
+    padding: 8px;
+}
+
+.MMM-Picnic .slotDiv.unavailable {
+    color: #aaa;
+    border: 1px solid #555;
+    text-decoration: line-through;
+}
+
+.MMM-Picnic .slotDiv.selected {
+    color: green;
+    border: 1px solid green; 
+}
+
+.MMM-Picnic .picnicHeader {
+    font-size: 1.2em;
+}
+
+.MMM-Picnic .picnicContent {
+    padding-left: 20px;
+    text-align: left;
+}
+
+.MMM-Picnic .recentDel table th {
+    padding-left: 20px;
+}

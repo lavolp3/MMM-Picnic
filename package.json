@@ -1,0 +1,24 @@
+{
+  "name": "mmm-picnic",
+  "version": "1.0.0",
+  "description": "![Alt text](/img/readme/example.png \"A preview of the MMM-Bring module.\")",
+  "main": "MMM-Picnic.js",
+  "module": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lavolp3/MMM-Picnic.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lavolp3/MMM-Picnic/issues"
+  },
+  "homepage": "https://github.com/lavolp3/MMM-Picnic#readme",
+  "dependencies": {
+    "esm": "^3.2.25",
+    "picnic-api": "^1.4.1"
+  }
+}

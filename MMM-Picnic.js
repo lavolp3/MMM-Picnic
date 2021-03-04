@@ -3,138 +3,154 @@ Module.register("MMM-Picnic", {
     defaults: {
         email: "dirk.kovert@gmail.com",
         password: "pcNC2483",
-        updateInterval: 15,
-        listName: undefined,
-        showListName: true,
-        activeItemColor: "#EE524F",
-        latestItemColor: "#4FABA2",
-        showLatestItems: false,
-        maxItems: 0,
-        maxLatestItems: 0,
-        locale: "de-DE"
+        updateInterval: 5,
+        maxSlots: 8,
+        maxDeliveries: 5,
+        size: "small",
+        preferredTime: [0, 0]
     },
+    
+    shoppingCart: {},
+    deliveries: [],
 
-    /*getStyles: function () {
-        return [this.file('css/styles.css')];
-    },*/
+    getStyles: function () {
+        return [this.file('MMM-Picnic.css')];
+    },
 
     start: function () {
-        this.list = undefined;
+        this.loaded = false;
+        console.log("Sending Picnic config: " + this.config);
         this.sendSocketNotification("INIT_PICNIC", this.config);
+        var self = this;
+        setInterval(function() {
+            self.log("Requesting picnic data...");
+            self.sendSocketNotification("GET_CART", self.config);
+            self.sendSocketNotification("GET_DELIVERIES", self.config);
+        }, this.config.updateInterval * 60 * 1000)
+    },
+    
+    
+    getTranslations: function() {
+        return {
+            en: 'translations/en.json',
+            de: 'translations/de.json',
+            nl: 'translations/nl.json'
+        };
     },
 
-    getDom: function () {
-        const container = document.createElement("div");
-        container.className = "bring-list-container bring-" + this.data.position;
+    getTemplate: function() {
+        return 'MMM-Picnic.njk';
+    },
 
-        /*if (this.config.showListName && this.list && this.list.name) {
-            const title = document.createElement("h3");
-            title.innerText = this.list.name;
-            container.appendChild(title);
+
+    getTemplateData: function() {
+        return {
+            loading: !this.loaded,
+            config: this.config,
+            shoppingCart: this.shoppingCart || {},
+            deliverySlots: this.getDeliverySlots(),
+            currentDelivery: this.getCurrentDelivery(),
+            recentDeliveries: this.getRecentDeliveries()   
         }
+    },
 
-        // Purchase
-        if (this.list && this.list.purchase) {
-            const bringList = document.createElement("div");
-            bringList.className = "bring-list";
-            let max = this.list.purchase.length;
-            if (this.config.maxItems !== 0) {
-                max = this.config.maxItems;
+    
+    getDeliverySlots: function() {
+        var delSlots = [];
+        if (this.shoppingCart.delivery_slots) {
+            var slots = this.shoppingCart.delivery_slots;
+            var maxSlots = Math.min(this.config.maxSlots, slots.length);
+            for (i = 0; i < maxSlots; i++) {
+                var slotClass = "";
+                if (moment(slots[i].window_start).hour() >= this.config.preferredTime[0] && moment(slots[i].window_start).hour() <= this.config.preferredTime[1]) {
+                    slotClass = "bold "
+                }
+                slotClass += (slots[i].selected) ? "selected" : (!slots[i].is_available) ? "unavailable dimmed" : "available",
+                delSlots.push({
+                    slotClass: slotClass,
+                    date: moment(slots[i].window_start).format("dd DD/MM"),
+                    timeRange: moment(slots[i].window_start).format("LT") + "-" + moment(slots[i].window_end).format("LT")
+                })
             }
-            for (let i = 0, len = max; i < len; i++) {
-                const bringListItem = document.createElement("div");
-                bringListItem.className = "bring-list-item-content";
-                bringListItem.style = "background-color: " + this.config.activeItemColor;
-                bringListItem.onclick = () => this.itemClicked({name: this.list.purchase[i].name, purchase: true, listId: this.list.uuid});
-
-                const upperPartContainer = document.createElement("div");
-                upperPartContainer.className = "bring-list-item-upper-part-container";
-                const imageContainer = document.createElement("div");
-                imageContainer.className = "bring-list-item-image-container";
-                const image = document.createElement("img");
-                image.src = this.list.purchase[i].imageSrc;
-                imageContainer.appendChild(image);
-                upperPartContainer.appendChild(imageContainer);
-
-                bringListItem.appendChild(upperPartContainer);
-
-
-                const itemTextContainer = document.createElement("div");
-                itemTextContainer.className = "bring-list-item-text-container";
-                const itemName = document.createElement("span");
-                itemName.className = "bring-list-item-name";
-                itemName.innerText = this.list.purchase[i].name;
-                itemTextContainer.appendChild(itemName);
-
-                const itemSpec = document.createElement("span");
-                itemSpec.className = "bring-list-item-specification-label";
-                itemSpec.innerText = this.list.purchase[i].specification;
-                itemTextContainer.appendChild(itemSpec);
-
-                bringListItem.appendChild(itemTextContainer);
-
-                bringList.appendChild(bringListItem);
-            }
-            container.appendChild(bringList);
         }
-        if (this.config.showLatestItems && this.list && this.list.recently) {
-            const bringListRecent = document.createElement("div");
-            bringListRecent.className = "bring-list";
-
-            let max = this.list.recently.length;
-            if (this.config.maxLatestItems !== 0) {
-                max = this.config.maxLatestItems;
+        return delSlots;
+    },
+    
+    
+    getCurrentDelivery: function() {
+        var totalItems = 0;
+        var totalPrice = 0;
+        if (this.deliveries && this.deliveries.length && this.deliveries[0].status === "CURRENT") {
+            if (moment(this.deliveries[0].eta2.end).format("X") > moment().format("X")) {
+                var curDel = this.deliveries[0];
+                for (let c = 0; c < curDel.orders.length; c++) {
+                    totalItems += curDel.orders[c].items.length;
+                    totalPrice += curDel.orders[c].checkout_total_price;
+                };
+                return {
+                    totalItems: totalItems,
+                    totalPrice: (totalPrice/100).toFixed(2) + "€",
+                    date: (moment(curDel.eta2.start).dayOfYear() === moment().dayOfYear) ? "Heute" : (moment(curDel.eta2.start).dayOfYear() === moment().add(1, 'days').dayOfYear) ? "Morgen" : moment(curDel.eta2.start).format("dd DD.MM."),
+                    eta: moment(curDel.eta2.start).format("LT") + " - " + moment(curDel.eta2.end).format("LT")
+                }
+            } else {
+                return ""
             }
-            for (let i = 0, len = max; i < len; i++) {
-                const bringListItem = document.createElement("div");
-                bringListItem.className = "bring-list-item-content";
-                bringListItem.style = "background-color: " + this.config.latestItemColor;
-                bringListItem.onclick = () => this.itemClicked({name: this.list.recently[i].name, purchase: false, listId: this.list.uuid});
+        }
+    },
+    
+    getRecentDeliveries: function() {
+        this.log(this.deliveries);
+        var recDel = [];        
+        if (this.deliveries.length) {
+            var maxDel = Math.min(this.config.maxDeliveries, this.deliveries.length);
+            for (let d = 0; d < maxDel; d++) {
+                var del = this.deliveries[d];
 
-                const upperPartContainer = document.createElement("div");
-                upperPartContainer.className = "bring-list-item-upper-part-container";
-                const imageContainer = document.createElement("div");
-                imageContainer.className = "bring-list-item-image-container";
-                const image = document.createElement("img");
-                image.src = this.list.recently[i].imageSrc;
-                imageContainer.appendChild(image);
-                upperPartContainer.appendChild(imageContainer);
+                var totalItems = 0; 
+                var totalPrice = 0;
+                for (let o = 0; o < del.orders.length; o++) {
+                    totalItems += del.orders[o].items.length;
+                    totalPrice += del.orders[o].total_price;
+                };
 
-                bringListItem.appendChild(upperPartContainer);
+                var returned = 0;
+                for (let r = 0; r < del.returned_containers.length; r++) {
+                    returned += del.returned_containers[r].price
+                }
 
-
-                const itemTextContainer = document.createElement("div");
-                itemTextContainer.className = "bring-list-item-text-container";
-                const itemName = document.createElement("div");
-                itemName.className = "bring-list-item-name";
-                itemName.innerText = this.list.recently[i].name;
-                itemTextContainer.appendChild(itemName);
-
-                const itemSpec = document.createElement("div");
-                itemSpec.className = "bring-list-item-specification-label";
-                itemSpec.innerText = this.list.recently[i].specification;
-                itemTextContainer.appendChild(itemSpec);
-
-                bringListItem.appendChild(itemTextContainer);
-
-                bringListRecent.appendChild(bringListItem);
-                container.appendChild(bringListRecent);
-            }
-        }*/
-        return container;
+                recDel.push({
+                    date: moment(del.eta2.start).format("dd DD.MM."),
+                    totalItems: totalItems,
+                    totalPrice: (totalPrice/100).toFixed(2) + "€",
+                    returned: -(returned/100).toFixed(2) + "€"
+                });
+            }            
+        }
+        this.log("Recent Deliveries: "+JSON.stringify(recDel))
+        return recDel;
     },
 
     socketNotificationReceived: function (notification, payload) {
-        if (notification === "LIST_DATA") {
-            this.list = payload;
-            this.updateDom(1000);
-        } else  if (notification === "RELOAD_LIST") {
-            this.sendSocketNotification("GET_LIST", this.config);
+        console.log("Socket Notification received: " + notification);
+        if (notification === "PICNIC_CART") {
+            this.log(payload);
+            this.loaded = true;
+            this.shoppingCart = payload;
+            this.shoppingCart.total_price = (this.shoppingCart.total_price/100).toFixed(2) + "€";
+        } else if (notification === "PICNIC_DELIVERIES") {
+            this.log(payload);
+            this.deliveries = payload;
+            if (this.deliveries[0].status === "CURRENT") {
+                this.sendSocketNotification("GET_CURRENT_DELIVERY", this.deliveries[0].id)
+            }
+        }
+        this.updateDom(1000);
+    },
+    
+    log: function (msg) {
+        if (this.config && this.config.debug) {
+            console.log(this.name + ": ", (msg));
         }
     },
-
-    itemClicked: function (item) {
-        this.sendSocketNotification("PURCHASED_ITEM", item);
-    }
-
 });
